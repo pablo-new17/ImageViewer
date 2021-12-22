@@ -17,9 +17,6 @@ MainWindow::MainWindow(QWidget *parent)
     Restore_UI();
 
 
-
-
-
     m_Disk_Folder_Model = new QFileSystemModel();
     m_Disk_Folder_Model->setRootPath("");
     m_Disk_Folder_Model->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot);
@@ -155,7 +152,7 @@ void MainWindow::on_treeView_Folder_pressed(const QModelIndex &index)
 //    MRW NEF NRW ORF ORI PBM PDF PEF PGM PNG PPM PS PS2 PS3 PSB PSD PSDT QT RAF
 //    RAW RW2 RWL SR2 SRW THM TIF TIFF VRD WDP X3F XMP
 
-    directory.setNameFilters({"*.jpg", "*.JPG", "*.png", "*.PNG", "*.gif", "*.GIF"});
+    directory.setNameFilters({"*.jpg", "*.JPG", "*.png", "*.PNG", "*.gif", "*.GIF", "*.tiff", "*.TIFF"});
     for(const QFileInfo& info: directory.entryInfoList())
     {
         QListWidgetItem *item = new QListWidgetItem(QIcon(info.absoluteFilePath()), info.fileName());
@@ -180,11 +177,16 @@ void MainWindow::on_listWidget_Pictures_itemClicked(QListWidgetItem *item)
     }
 
     QByteArrayList cmdArgs;
-    cmdArgs << "-XPComment";
-    cmdArgs << Image_File.toLocal8Bit();
+    cmdArgs << "-Title";        //標題
+    cmdArgs << "-XPSubject";    //主旨
+    cmdArgs << "-Subject";      //標籤
+    cmdArgs << "-XPComment";    //註解
+    cmdArgs << "-Artist";       //作者
+
+    cmdArgs << "-charset" << "filename=utf8";
+    cmdArgs << Image_File.toUtf8();
 
     // Send command to ZExifToolProcess
-    qDebug() << cmdArgs;
     etProcess->command(cmdArgs);
 
     bool Enabled = false;
@@ -203,19 +205,40 @@ void MainWindow::onEtCmdCompleted(int cmdId, int execTime, const QByteArray &cmd
     Q_UNUSED(execTime)
 
     QString Message = QString(cmdOutputChannel);
+    qDebug() << "Message: " << Message;
 
     if(Message.isEmpty())
          Message = QString(cmdErrorChannel);
     else
-        Message = Message.section(":", 1, 1).trimmed();
+    {
+        ui->textEdit_Title->setPlainText("");
+        ui->textEdit_Subject->setPlainText("");
+        ui->textEdit_Tags->setPlainText("");
+        ui->textEdit_Comment->setPlainText("");
+        ui->textEdit_Authors->setPlainText("");
 
-    ui->textEdit_Info->setPlainText(Message);
+        foreach(QString msg, Message.split('\n'))
+        {
+            QString Key = msg.section(":", 0, 0).trimmed();
+            QString Value = msg.section(":", 1).trimmed();
+            qDebug() << "Msg: " << Key << Value;
 
+            if(Key.isEmpty())   continue;
+            if(Key == "Title")
+                ui->textEdit_Title->setPlainText(Value);
+            if(Key == "XP Subject")
+                ui->textEdit_Subject->setPlainText(Value);
+            if(Key == "Subject")
+                ui->textEdit_Tags->setPlainText(Value);
+            if(Key == "XP Comment")
+                ui->textEdit_Comment->setPlainText(Value);
+            if(Key == "Artist")
+                ui->textEdit_Authors->setPlainText(Value);
+        }
+    }
     // Stop ZExifToolProcess on command complete
     etProcess->terminate();
 }
-
-
 
 
 
@@ -229,10 +252,19 @@ void MainWindow::on_pushButton_Edit_clicked()
     }
 
     QByteArrayList cmdArgs;
-    QString Comment = QString("-XPComment=%1").arg(ui->textEdit_Info->toPlainText());
+    QString Title = QString("-Title=%1").arg(ui->textEdit_Title->toPlainText());
+    QString Subject = QString("-XPSubject=%1").arg(ui->textEdit_Subject->toPlainText());
+    QString Tags = QString("-Subject=%1").arg(ui->textEdit_Tags->toPlainText());
+    QString Comment = QString("-XPComment=%1").arg(ui->textEdit_Comment->toPlainText());
+    QString Author = QString("-Artist=%1").arg(ui->textEdit_Authors->toPlainText());
+    cmdArgs << "-charset" << "filename=utf8";
     bool Write = false;
 
-    cmdArgs << Comment.toLocal8Bit();
+    cmdArgs << Title.toUtf8();
+    cmdArgs << Subject.toUtf8();
+    cmdArgs << Tags.toUtf8();
+    cmdArgs << Comment.toUtf8();
+    cmdArgs << Author.toUtf8();
 
     for(int Index = 0; Index < ui->listWidget_Pictures->count(); Index++)
     {
@@ -240,7 +272,9 @@ void MainWindow::on_pushButton_Edit_clicked()
         if(item->checkState())
         {
             QString Image_File = m_Disk_Folder_Model->filePath(ui->treeView_Folder->currentIndex()) + "/" + item->text();
-            cmdArgs << Image_File.toLocal8Bit();
+            qDebug() << Image_File;
+
+            cmdArgs << Image_File.toUtf8();
             Write = true;
         }
     }
@@ -256,6 +290,6 @@ void MainWindow::on_pushButton_Edit_clicked()
 
 void MainWindow::on_action_triggered()
 {
-    QMessageBox::about(this, "關於...", "版本: 0.1.0.20211218");
+    QMessageBox::about(this, "關於...", "版本: " + QCoreApplication::applicationVersion());
 }
 
