@@ -16,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     Restore_UI();
 
+    ui->dateTimeEdit->setDateTime(QDateTime::currentDateTime());
 
     m_Disk_Folder_Model = new QFileSystemModel();
     m_Disk_Folder_Model->setRootPath("");
@@ -116,6 +117,7 @@ void MainWindow::on_splitter_Middle_splitterMoved(int pos, int index)
 
 void MainWindow::on_splitter_Left_splitterMoved(int pos, int index)
 {
+    Q_UNUSED(index)
     m_Config->beginGroup("UI");
         m_Config->setValue("Split_L", pos);
     m_Config->endGroup();
@@ -124,6 +126,7 @@ void MainWindow::on_splitter_Left_splitterMoved(int pos, int index)
 
 void MainWindow::on_splitter_Right_splitterMoved(int pos, int index)
 {
+    Q_UNUSED(index)
     m_Config->beginGroup("UI");
         m_Config->setValue("Split_R", pos);
     m_Config->endGroup();
@@ -177,11 +180,12 @@ void MainWindow::on_listWidget_Pictures_itemClicked(QListWidgetItem *item)
     }
 
     QByteArrayList cmdArgs;
-    cmdArgs << "-Title";        //標題
-    cmdArgs << "-XPSubject";    //主旨
-    cmdArgs << "-Subject";      //標籤
-    cmdArgs << "-XPComment";    //註解
-    cmdArgs << "-Artist";       //作者
+    cmdArgs << "-Title";            //標題
+    cmdArgs << "-XPSubject";        //主旨
+    cmdArgs << "-Subject";          //標籤
+    cmdArgs << "-XPComment";        //註解
+    cmdArgs << "-Artist";           //作者
+    cmdArgs << "-DateTimeOriginal"; //日期
 
     cmdArgs << "-charset" << "filename=utf8";
     cmdArgs << Image_File.toUtf8();
@@ -216,6 +220,7 @@ void MainWindow::onEtCmdCompleted(int cmdId, int execTime, const QByteArray &cmd
         ui->textEdit_Tags->setPlainText("");
         ui->textEdit_Comment->setPlainText("");
         ui->textEdit_Authors->setPlainText("");
+        ui->dateTimeEdit->setDateTime(QDateTime::currentDateTime());
 
         foreach(QString msg, Message.split('\n'))
         {
@@ -234,6 +239,13 @@ void MainWindow::onEtCmdCompleted(int cmdId, int execTime, const QByteArray &cmd
                 ui->textEdit_Comment->setPlainText(Value);
             if(Key == "Artist")
                 ui->textEdit_Authors->setPlainText(Value);
+            if(Key == "Date/Time Original")
+            {
+                QDateTime CreateDate = QDateTime::fromString(Value, "yyyy:MM:dd hh:mm:ss");
+                qDebug() << CreateDate;
+
+                ui->dateTimeEdit->setDateTime(CreateDate);
+            }
         }
     }
     // Stop ZExifToolProcess on command complete
@@ -257,6 +269,8 @@ void MainWindow::on_pushButton_Edit_clicked()
     QString Tags = QString("-Subject=%1").arg(ui->textEdit_Tags->toPlainText());
     QString Comment = QString("-XPComment=%1").arg(ui->textEdit_Comment->toPlainText());
     QString Author = QString("-Artist=%1").arg(ui->textEdit_Authors->toPlainText());
+    QString Create = QString("-DateTimeOriginal=%1").arg(ui->dateTimeEdit->text());
+    qDebug() << Create;
     cmdArgs << "-charset" << "filename=utf8";
     bool Write = false;
 
@@ -265,6 +279,7 @@ void MainWindow::on_pushButton_Edit_clicked()
     cmdArgs << Tags.toUtf8();
     cmdArgs << Comment.toUtf8();
     cmdArgs << Author.toUtf8();
+    cmdArgs << Create.toUtf8();
 
     for(int Index = 0; Index < ui->listWidget_Pictures->count(); Index++)
     {
