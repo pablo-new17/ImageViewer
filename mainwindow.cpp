@@ -291,6 +291,8 @@ void MainWindow::on_pushButton_Edit_clicked()
 
             cmdArgs << Image_File.toUtf8();
             Write = true;
+
+            item->setCheckState(Qt::CheckState::Unchecked);
         }
     }
 
@@ -299,6 +301,9 @@ void MainWindow::on_pushButton_Edit_clicked()
         // Send command to ZExifToolProcess
         qDebug() << cmdArgs;
         etProcess->command(cmdArgs);
+
+
+
     }
 }
 
