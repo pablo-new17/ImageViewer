@@ -7,6 +7,7 @@
 #include <QListWidgetItem>
 
 #include "ZExifTool/ZExifToolProcess.h"
+#include "dialog_show_image.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -42,11 +43,14 @@ private slots:
 
     void on_action_triggered();
 
+    void on_listWidget_Pictures_itemDoubleClicked(QListWidgetItem *item);
+
 private:
     Ui::MainWindow*     ui;
     QSettings*          m_Config;
     QFileSystemModel*   m_Disk_Folder_Model;
     ZExifToolProcess*   etProcess;
+    Dialog_Show_Image   m_Image_View;
 
     // QWidget interface
 protected:

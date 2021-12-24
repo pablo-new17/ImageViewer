@@ -167,6 +167,13 @@ void MainWindow::on_treeView_Folder_pressed(const QModelIndex &index)
 
 void MainWindow::on_listWidget_Pictures_itemClicked(QListWidgetItem *item)
 {
+    ui->textEdit_Title->setPlainText("");
+    ui->textEdit_Subject->setPlainText("");
+    ui->textEdit_Tags->setPlainText("");
+    ui->textEdit_Comment->setPlainText("");
+    ui->textEdit_Authors->setPlainText("");
+    ui->dateTimeEdit->setDateTime(QDateTime::currentDateTime());
+
     QString Image_File = m_Disk_Folder_Model->filePath(ui->treeView_Folder->currentIndex()) + "/" + item->text();
 
     QPixmap pixmap(Image_File);
@@ -174,7 +181,7 @@ void MainWindow::on_listWidget_Pictures_itemClicked(QListWidgetItem *item)
 
     // Start ZExifToolProcess
     etProcess->start();
-    if(!etProcess->waitForStarted(500)) {
+    if(!etProcess->waitForStarted(1000)) {
         etProcess->kill();
         return;
     }
@@ -208,20 +215,23 @@ void MainWindow::onEtCmdCompleted(int cmdId, int execTime, const QByteArray &cmd
     Q_UNUSED(cmdId)
     Q_UNUSED(execTime)
 
+    ui->textEdit_Title->setPlainText("");
+    ui->textEdit_Subject->setPlainText("");
+    ui->textEdit_Tags->setPlainText("");
+    ui->textEdit_Comment->setPlainText("");
+    ui->textEdit_Authors->setPlainText("");
+    ui->dateTimeEdit->setDateTime(QDateTime::currentDateTime());
+
     QString Message = QString(cmdOutputChannel);
+    QString Error = QString(cmdErrorChannel);
     qDebug() << "Message: " << Message;
 
-    if(Message.isEmpty())
-         Message = QString(cmdErrorChannel);
+    if(Message.isEmpty() && !Error.isEmpty())
+    {
+        QMessageBox::warning(this, "不正常結果", Error);
+    }
     else
     {
-        ui->textEdit_Title->setPlainText("");
-        ui->textEdit_Subject->setPlainText("");
-        ui->textEdit_Tags->setPlainText("");
-        ui->textEdit_Comment->setPlainText("");
-        ui->textEdit_Authors->setPlainText("");
-        ui->dateTimeEdit->setDateTime(QDateTime::currentDateTime());
-
         foreach(QString msg, Message.split('\n'))
         {
             QString Key = msg.section(":", 0, 0).trimmed();
@@ -258,7 +268,7 @@ void MainWindow::on_pushButton_Edit_clicked()
 {
     // Start ZExifToolProcess
     etProcess->start();
-    if(!etProcess->waitForStarted(500)) {
+    if(!etProcess->waitForStarted(1000)) {
         etProcess->kill();
         return;
     }
@@ -311,5 +321,16 @@ void MainWindow::on_pushButton_Edit_clicked()
 void MainWindow::on_action_triggered()
 {
     QMessageBox::about(this, "關於...", "版本: " + QCoreApplication::applicationVersion());
+}
+
+
+void MainWindow::on_listWidget_Pictures_itemDoubleClicked(QListWidgetItem *item)
+{
+    QString Image_File = m_Disk_Folder_Model->filePath(ui->treeView_Folder->currentIndex()) + "/" + item->text();
+
+    m_Image_View.setImage_File(Image_File);
+    m_Image_View.show();
+    m_Image_View.raise();
+    m_Image_View.activateWindow();
 }
 

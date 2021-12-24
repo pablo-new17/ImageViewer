@@ -4,7 +4,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
 
-VERSION = 0.3.0.210211223
+VERSION = 0.4.0.210211224
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 # You can make your code fail to compile if it uses deprecated APIs.
@@ -12,13 +12,16 @@ DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    dialog_show_image.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
+    dialog_show_image.h \
     mainwindow.h
 
 FORMS += \
+    dialog_show_image.ui \
     mainwindow.ui
 
 # Add the following line to your project
